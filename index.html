@@ -1,34 +1,267 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>SVG.js Example</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/svg.js/3.2.0/svg.min.js"></script>
-    <style>
-      html,
-      body {
-        padding: 0;
-        margin: 0;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="svgContainer"></div>
-    <script>
-      const CONTAINER_WIDTH = 340;
-      const CONTAINER_HEIGHT = 250;
 
-      // 创建SVG容器
-      const draw = SVG()
-        .addTo('#svgContainer')
-        .size(CONTAINER_WIDTH, CONTAINER_HEIGHT)
-        .viewbox(0, 0, CONTAINER_WIDTH, CONTAINER_HEIGHT);
+<head>
+  <title>SVG.js Example</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/svg.js/3.2.0/svg.min.js"></script>
+  <style>
+    html,
+    svg {
+      width: 100% !important;
+    }
 
-      // 设置背景色
-      draw.rect(CONTAINER_WIDTH, CONTAINER_HEIGHT).fill('#f2f2f2');
+    svg g {
+      /* transform: translate(-3%, -45%); */
+    }
 
-      // 保存SVG图形
-      const str = draw.svg();
-      console.log(str);
-    </script>
-  </body>
+    /* 
+    foreignObject {
+      transform: matrix(0.08, 0, 0, 0.08, 800t, 177.8);
+      height: 2000px;
+    } */
+
+    body {
+      padding: 0;
+      margin: 0;
+    }
+
+    @font-face {
+      /*庞门正道细线体*/
+      font-family: kilofolo1;
+      src: url("https://devop.kilofolo.com/fonts/16428585195227258.woff");
+    }
+
+    @font-face {
+      /*书法字体*/
+      font-family: kilofolo2;
+      src: url("https://devop.kilofolo.com/fonts/15858862946884371.woff");
+    }
+
+    @font-face {
+      /*简约黑体*/
+      font-family: kilofolo3;
+      src: url("https://devop.kilofolo.com/fonts/16315020836174292.woff");
+    }
+
+    @font-face {
+      /*书法字体*/
+      font-family: kilofolo4;
+      src: url("https://devop.kilofolo.com/fonts/15940978562344934.woff");
+    }
+
+    /* p {
+      font-family: Gentium, serif;
+    } */
+  </style>
+</head>
+
+<body>
+  <script type="application/json" src="data.json"></script>
+  <script>
+    function drawfonts() {
+      var request = new XMLHttpRequest();
+      request.open("GET", './data.json');
+      request.responseType = "text"; // now we're getting a string!
+      request.send();
+      let redraw = function () {
+        if (request.status !== 200) {
+          return
+        }
+        const dataArray = JSON.parse(request.response).data; // convert it to an object
+        const { x: x1, y: y1, width: width1, height: heigh1 } = document.getElementById('svgContainer').getClientRects()[0]
+        console.log(x1, y1, width1, heigh1, document.getElementById('svgContainer').getClientRects()[0])
+        const CONTAINER_WIDTH = `${width1}`;
+        const CONTAINER_HEIGHT = '768';
+
+        console.log(dataArray)
+        // 创建一个 SVG 元素
+        const drawAfont = ({ index, tfObj, tfName, tfSlogan, drawEx }) => {
+          const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+          svg.setAttribute("width", "100%");
+          svg.setAttribute("height", "100%");
+
+
+          const dataOpt = dataArray[index - 1]
+          // 创建SVG容器
+          const draw = SVG()
+            .addTo('#svgContainer')
+            .size(CONTAINER_WIDTH, CONTAINER_HEIGHT)
+            .viewbox(0, 0, CONTAINER_WIDTH, CONTAINER_HEIGHT)
+
+          console.log(draw.viewbox())
+
+          // 创建文本元素
+          draw.rect(CONTAINER_WIDTH, CONTAINER_HEIGHT).fill(dataOpt.background_color);
+          var group = draw.group()
+
+          console.log(dataOpt.font.name)
+
+
+
+          if (tfName) {
+            const name = draw.text(dataOpt.logo_name,).font({
+              family: `kilofolo${index}`,
+              size: 45,
+              fill: dataOpt.font.name[0].color,//'#9f704f',
+            })
+            if (dataOpt.font.name[0].curve) {
+              var curve = draw.path(dataOpt.font.name[0].curve).fill('transparent');
+              name.path(curve)
+            }
+            console.log('dataOpt.font.name[0].color', dataOpt.font.name[0].color)
+            console.log('dataOpt.font.name[0].curve', dataOpt.font.name[0].curve)
+
+            tfName(name)
+            group.add(name)
+          }
+
+
+          if (tfSlogan) {
+            // .transform({ translateX: 550, translateY: 500, scale: 3 })
+
+            // console.log('dataOpt.font.slogan.path', dataOpt.font.slogan.path)
+
+            var curve = draw.path(dataOpt.font.slogan.path).fill('transparent');
+
+            const slogan = draw.text(dataOpt.slogan_name)
+              .font({
+                family: `kilofolo${index}`,
+                size: 45,
+                fill: dataOpt.font.slogan.color,
+              })
+            // .transform({ translateX: 350, translateY: 500, scale: 1 })
+            slogan.path(curve)
+            tfSlogan(slogan)
+            group.add(slogan)
+          }
+          if (tfObj) {
+            let p1 = null
+            if (dataOpt.icon_normal && dataOpt.icon_normal.svg_source_code) {
+              p1 = draw.foreignObject(CONTAINER_WIDTH, CONTAINER_HEIGHT)
+              p1.add(SVG(dataOpt.icon_normal.svg_source_code))
+            } else {
+              p1 = draw.path(dataOpt.font.name[0].path).fill('none')
+                .stroke({ color: dataOpt.font.name[0].color/*'#9f704f'*/, width: 4 })
+            }
+            tfObj(p1)
+            group.add(p1)
+          }
+          if (drawEx) {
+            group.add(drawEx(draw, group, dataOpt, index))
+          }
+
+
+          // 设置背景色
+          // 保存SVG图形
+          const str = draw.svg();
+          console.log(str)
+        }
+
+        const tf = (x, y, scale) => {
+          return (ele) => {
+            ele.transform({ translateX: x, translateY: y, scale })
+          }
+        }
+        const drawExtraUnderLine = () => {
+          return (draw, group) => {
+            const rect = draw.rect(40, 5).fill('#f15a22')
+            rect.transform({ translateX: CONTAINER_WIDTH / 2 - 135, translateY: CONTAINER_HEIGHT / 2 + 55, scale: 2 })
+            const rect1 = draw.rect(40, 5).fill('#f15a22')
+            rect1.transform({ translateX: CONTAINER_WIDTH / 2 + 195, translateY: CONTAINER_HEIGHT / 2 + 55, scale: 2 })
+            if (group) {
+              group.add(rect)
+            }
+            return rect
+          }
+        }
+
+        const drawExtraName = () => {
+          return (draw, group, dataOpt, index) => {
+            const name1 = draw.text(dataOpt.logo_name.slice(0, 2)).font({
+              family: `kilofolo${index}`,
+              size: 45,
+              fill: '#fff',//'#9f704f',
+              stroke: dataOpt.font.name[0].color
+            })
+            name1.transform({ translateX: CONTAINER_WIDTH / 2, translateY: CONTAINER_HEIGHT / 2 - 50, scale: 4 })
+            const name2 = draw.text(dataOpt.logo_name.slice(2, 4)).font({
+              family: `kilofolo${index}`,
+              size: 45,
+              fill: '#FB3535',//dataOpt.font.name[0].color,//'#9f704f',
+            })
+            name2.transform({ translateX: CONTAINER_WIDTH / 2 + 0, translateY: CONTAINER_HEIGHT / 2 + 150, scale: 4 })
+
+            const circle = draw.circle(400).center(CONTAINER_WIDTH / 2 + 50, CONTAINER_HEIGHT / 2 + 40).fill('none').stroke({ width: 200, color: '#fff' })
+
+            const semiC = draw.path(`M ${CONTAINER_WIDTH / 2 - 50} ${CONTAINER_HEIGHT / 2 - 10} A 50 50 1 1 1 ${CONTAINER_WIDTH / 2 + 0 + 150} ${CONTAINER_HEIGHT / 2 - 10}`).fill('#f00')
+
+            const semiC2 = draw.path(`M ${CONTAINER_WIDTH / 2 - 50} ${CONTAINER_HEIGHT / 2 + 90} A 50 50 1 1 0 ${CONTAINER_WIDTH / 2 + 0 + 150} ${CONTAINER_HEIGHT / 2 + 90}`).fill('#ff0013')
+
+            const line = draw.rect(CONTAINER_WIDTH, 2).fill('black');
+
+
+            circle.transform({ scale: 2 })
+
+            semiC.transform({ scale: 2 })
+
+            semiC2.transform({ scale: 2 })
+
+
+
+
+
+
+
+
+
+            // < svg width = "200" height = "100" xmlns = "http://www.w3.org/2000/svg" >
+            //   <path d="M 100 0 A 100 100 0 0 0 200 100" fill="none" stroke="black" />
+            // </svg >
+
+
+            // rect1.transform({ translateX: CONTAINER_WIDTH / 2 + 160, translateY: CONTAINER_HEIGHT / 2 + 50, scale: 1 })
+
+            if (group) {
+              group.add(semiC)
+              group.add(semiC2)
+              group.add(name1)
+              group.add(name2)
+              group.add(circle)
+            }
+          }
+        }
+        const drawExCss = () => {
+          // 创建一个新的<style>标签
+          var styleTag = document.createElement('style');
+          // 将CSS规则添加到<style>标签中
+          styleTag.textContent = `
+            foreignObject {
+                  transform: matrix(${(5000 - CONTAINER_WIDTH) / 2560 / 10}, 0, 0, ${(5000 - CONTAINER_WIDTH) / 2560 / 10}, ${CONTAINER_WIDTH / 2 - 60}, ${(5000 - CONTAINER_WIDTH) / 23 - 100});
+                  height: ${1.2 * CONTAINER_WIDTH}px;
+                }
+            `;
+          // 将<style>标签插入到<head>元素中
+          document.head.appendChild(styleTag);
+        }
+        drawExCss()
+        console.log('CONTAINER_WIDTH, CONTAINER_HEIGHT', CONTAINER_WIDTH, CONTAINER_HEIGHT)
+        drawAfont({ index: 1, tfObj: tf(CONTAINER_WIDTH / 2 - 250, CONTAINER_HEIGHT / 2 - 50, 1), tfName: tf(CONTAINER_WIDTH / 2, CONTAINER_HEIGHT / 2, 2) })
+        drawAfont({ index: 2, tfObj: null, tfName: tf(CONTAINER_WIDTH / 2 - 50, CONTAINER_HEIGHT / 2, 3), tfSlogan: tf(CONTAINER_WIDTH / 2 - 280, CONTAINER_HEIGHT / 2, 1) })
+        drawAfont({ index: 3, tfObj: tf(- CONTAINER_WIDTH / 2 - 100, 100 - CONTAINER_HEIGHT / 2, 2), tfName: tf(CONTAINER_WIDTH / 2, CONTAINER_HEIGHT / 2, 3), drawEx: drawExtraUnderLine() })
+        drawAfont({ index: 4, tfObj: null, tfName: null, drawEx: drawExtraName() })
+
+      };
+      request.onload = redraw
+    }
+    window.onload = function () {
+      drawfonts()
+    }
+  </script>
+  <div id="svgContainer" style="width: 100%;height: 100%;"></div>
+  <script>
+
+
+  </script>
+</body>
+
 </html>
